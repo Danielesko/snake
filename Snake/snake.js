@@ -1,7 +1,23 @@
+// crear la funcion para reproducir sonido
+function sonido(src) { 
+    this.sonido = document.createElement("audio");
+    this.sonido.src = src;
+    this.sonido.setAttribute("preload","auto");
+    this.sonido.setAttribute("controls","none");
+    this.sonido.style.display = "none";
+    document.body.appendChild(this.sonido);
+    this.play = function () {
+        this.sonido.play();
+    }
+    this.stop = function () {
+        this.stop.pause();
+    }
+}
 class juego{
     snake = [];
     comida = null;
     director = null;
+    puntuacion = 0;
     direccion = 2;
     tamano = 10;
     canvas = null;
@@ -10,7 +26,7 @@ class juego{
     cola = new Image();
     galleta = new Image();
     derrota = new Image();
-    //sonido = new sound("multimedia/Grito.m4a");
+    sonido = new sonido("multimedia/Grito.mp3");
     direcciones = ["","Arriba","Derecha","Abajo","Izquierda"];
     constructor(txtButton,txtState,canvas){
         this.txtButton = txtButton;
@@ -33,11 +49,10 @@ class juego{
         cuadrado.X = 15;
         cuadrado.Y = 15;
         cuadrado.X_antiguo = 15;
-        cuadrado.Y_antuguo = 15;
+        cuadrado.Y_antiguo = 15;
         this.snake.push(cuadrado);
         // obtener tecla pulsada
         document.addEventListener("keypress",(e)=>{
-            this.mostrarTecla(e.key);
             // En este switch se eligen las direcciones a las que puede ir segun este yendo actualmente
             switch(e.key){
                 case "w":
@@ -60,6 +75,8 @@ class juego{
         });
         // cada 100 mls revisa si ha muerto
         this.director = setInterval(()=>{
+            this.mostrarPuntuacion();
+            this.reglas();
             if(!this.perdida){
                 this.continua();
                 this.mostrar();
@@ -72,7 +89,6 @@ class juego{
         }, 100);
     }
     continua(){
-        this.mostrarDireccion();
         //crear comida si es null
         if(this.comida == null){
             this.conseguirGalletas();
@@ -80,7 +96,7 @@ class juego{
         //verificar posicion de la serpiente
         this.snake.map( (cuadrado)=>{
             cuadrado.X_antiguo = cuadrado.X;
-            cuadrado.Y_antuguo = cuadrado.Y;
+            cuadrado.Y_antiguo = cuadrado.Y;
         })
         //movemos la posicion de la serpiente
         switch(this.direccion){
@@ -98,10 +114,10 @@ class juego{
                 break;
         }
         //reubicar la cola de la serpiente
-        this.snake.map((cuadrado,index,snake1)=>{
+        this.snake.map((cuadrado,index,snake_)=>{
             if(index!=0){
-                cuadrado.X = snake1[index -1].X_antiguo;
-                cuadrado.Y = snake1[index -1].Y_antiguo;
+                cuadrado.X = snake_[index -1].X_antiguo;
+                cuadrado.Y = snake_[index -1].Y_antiguo;
             }
         });
         if(this.comida !=null){
@@ -124,15 +140,34 @@ class juego{
                 this.ctx.drawImage(this.galleta, this.comida.X*this.tamano,this.comida.Y*this.tamano);
             }
         })
+    } 
+    //reglas de muerte
+    reglas(){
+        //colision consigo misma
+        for (let i = 0; i < this.snake.length; i++) {
+            for (let x = 0; x < this.snake.length; x++) {
+                if(i!=x){
+                    if(this.snake[i].X == this.snake[x].X && this.snake[i].Y == this.snake[x].Y){
+                        this.perdida = true;
+                    }
+                }
+            }            
+        }
+        //salirse de la pantalla
+        if(this.snake[0].X >= 30 || this.snake[0].X < 0 || this.snake[0].Y >= 30 || this.snake[0].Y < 0){
+            this.perdida = true;
+        }
     }
     comerGalletas(){ // verificar cuando come, teniendo en cuenta que la cabeza de la serpiente y la galleta estan en el mismo sitio
         if(this.snake[0].X == this.comida.X && this.snake[0].Y == this.comida.Y){
             this.comida = null;
+            this.sonido.play();
+            let cuadrado = new Object();
+            cuadrado.X = this.snake[this.snake.length - 1].X_antiguo;
+            cuadrado.Y = this.snake[this.snake.length - 1].Y_antiguo;
+            this.snake.push(cuadrado);
+            this.puntuacion = this.puntuacion+1;
         }
-        let cuadrado2 = new Object();
-        cuadrado2.X = this.snake[this.snake.length - 1].X_antiguo;
-        cuadrado2.Y = this.snake[this.snake.length - 1].Y_antiguo;
-        this.snake.push(cuadrado2);
     }
     conseguirGalletas(){//obtener comida en una posicion aleatoria
         var cuadrado1 = new Object();
@@ -145,6 +180,9 @@ class juego{
     }
     mostrarTecla(txt){
         this.txtButton.value = txt;
+    }
+    mostrarPuntuacion(){
+        document.getElementById("marcador").innerHTML = this.puntuacion;
     }
 }
 //crear un objeto juego
